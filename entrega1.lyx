@@ -109,10 +109,6 @@
 
 \begin_body
 
-\begin_layout Standard
-
-\end_layout
-
 \begin_layout Section*
 Ejercicio 4
 \end_layout
@@ -250,7 +246,7 @@ Ejercicio 15
 \end_layout
 
 \begin_layout Subsection*
-Part a) Basic Bell-LaPadula Function
+a) Bell-LaPadula
 \end_layout
 
 \begin_layout Standard
@@ -270,17 +266,31 @@ module BellLaPadula where
 
 \begin_layout Plain Layout
 
--- Basic data types
+import qualified Data.Map as Map
 \end_layout
 
 \begin_layout Plain Layout
 
-data SecurityLevel = Unclassified | Confidential 
+import Data.Map (Map)
 \end_layout
 
 \begin_layout Plain Layout
 
-                  | Secret | TopSecret 
+\end_layout
+
+\begin_layout Plain Layout
+
+-- Tipos básicos
+\end_layout
+
+\begin_layout Plain Layout
+
+data SecurityLevel = Unclassified | Confidential
+\end_layout
+
+\begin_layout Plain Layout
+
+                  | Secret | TopSecret
 \end_layout
 
 \begin_layout Plain Layout
@@ -365,7 +375,7 @@ data File = File
 
 \begin_layout Plain Layout
 
--- Main access control function
+-- Control de acceso básico
 \end_layout
 
 \begin_layout Plain Layout
@@ -394,7 +404,7 @@ grant user file access = case access of
 \end_layout
 
 \begin_layout Subsection*
-Part b) Extended Function with State Tracking
+b) Extended Function with State Tracking
 \end_layout
 
 \begin_layout Standard
@@ -405,12 +415,7 @@ status open
 
 \begin_layout Plain Layout
 
-import qualified Data.Map as Map
-\end_layout
-
-\begin_layout Plain Layout
-
-import Data.Map (Map)
+----- Extensión: Asegurar propiedad *
 \end_layout
 
 \begin_layout Plain Layout
@@ -419,7 +424,7 @@ import Data.Map (Map)
 
 \begin_layout Plain Layout
 
--- System state tracking open files
+-- Estado del sistema
 \end_layout
 
 \begin_layout Plain Layout
@@ -429,12 +434,16 @@ type OpenFiles = Map (UserName, FileName) AccessType
 
 \begin_layout Plain Layout
 
+\end_layout
+
+\begin_layout Plain Layout
+
 data SystemState = SystemState
 \end_layout
 
 \begin_layout Plain Layout
 
-  { securityPolicy :: Map (UserName, FileName) Bool
+  { files :: Map FileName File            -- Store all files in the system
 \end_layout
 
 \begin_layout Plain Layout
@@ -453,7 +462,53 @@ data SystemState = SystemState
 
 \begin_layout Plain Layout
 
--- Extended access control function
+-- Archivos abiertos en modo lectura por un usuario
+\end_layout
+
+\begin_layout Plain Layout
+
+openReadFiles :: User -> SystemState -> [File]
+\end_layout
+
+\begin_layout Plain Layout
+
+openReadFiles user state =
+\end_layout
+
+\begin_layout Plain Layout
+
+    mapMaybe (
+\backslash
+((uname,fname), mode) ->
+\end_layout
+
+\begin_layout Plain Layout
+
+                if uname == userName user && mode == Read
+\end_layout
+
+\begin_layout Plain Layout
+
+                then Map.lookup fname (files state)
+\end_layout
+
+\begin_layout Plain Layout
+
+                else Nothing)
+\end_layout
+
+\begin_layout Plain Layout
+
+             (Map.toList $ openFiles state)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+-- Control de acceso con seguimiento del estado del sistema
 \end_layout
 
 \begin_layout Plain Layout
@@ -468,58 +523,54 @@ grant' user file access state =
 
 \begin_layout Plain Layout
 
-  let canAccess = case access of
+  let canAccess = grant user file access
 \end_layout
 
 \begin_layout Plain Layout
 
-        Read -> userClearance user >= fileClassification file
 \end_layout
 
 \begin_layout Plain Layout
 
-        Write -> userClearance user <= fileClassification file
+      -- Maximo nivel de seguridad en archivos abiertos
 \end_layout
 
 \begin_layout Plain Layout
 
-      
+      maxReadLevel = case openReadFiles user state of
 \end_layout
 
 \begin_layout Plain Layout
 
-      -- Check *-property (no incompatible open modes)
+                       [] -> fileClassification file
 \end_layout
 
 \begin_layout Plain Layout
 
-      alreadyOpen = Map.lookup (userName user, fileName file) (openFiles
- state)
+                       fs -> maximum $ map fileClassification fs
 \end_layout
 
 \begin_layout Plain Layout
 
-      propertyStarViolation = case (alreadyOpen, access) of
 \end_layout
 
 \begin_layout Plain Layout
 
-        (Just Read, Write) -> True
+      propertyStarViolation = case access of
 \end_layout
 
 \begin_layout Plain Layout
 
-        (Just Write, _) -> True
+        Write -> fileClassification file < maxReadLevel
 \end_layout
 
 \begin_layout Plain Layout
 
-        _ -> False
+        _     -> False
 \end_layout
 
 \begin_layout Plain Layout
 
-      
 \end_layout
 
 \begin_layout Plain Layout
@@ -529,12 +580,11 @@ grant' user file access state =
 
 \begin_layout Plain Layout
 
-      
 \end_layout
 
 \begin_layout Plain Layout
 
-      -- Update state if access granted
+      -- Actualizar el estado del sistema
 \end_layout
 
 \begin_layout Plain Layout
@@ -544,7 +594,7 @@ grant' user file access state =
 
 \begin_layout Plain Layout
 
-                     then Map.insert (userName user, fileName file) 
+                     then Map.insert (userName user, fileName file)
 \end_layout
 
 \begin_layout Plain Layout
@@ -573,7 +623,7 @@ grant' user file access state =
 
 \begin_layout Plain Layout
 
--- Function to close files
+-- Cerrar archivos
 \end_layout
 
 \begin_layout Plain Layout
