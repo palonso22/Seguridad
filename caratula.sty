@@ -116,12 +116,12 @@
 }
 
 \newcommand{\tablaIntegrantesHorizontal}{%
+    {\Huge\textbf{Alumno:}} \\[0.5em]
     \begin{tabular}[t]{ *{\value{integrantesCount}}{c} }
-    \the\intTabNombre \\%
+    {\Huge \the\intTabNombre} \\%
 \ifthenelse{\boolean{showLU}}{
     \the\intTabLU \\%
 }{}
-    \the\intTabEmail %
     \end{tabular}%
 }
 
@@ -233,11 +233,16 @@
     \vspace*{.06 \textheight}
 
     \begin{center}
+    {\Huge\textbf{Materia:} \Materia}
+    \end{center}
+    
+    \medskip
+    
+    \begin{center}
 		\noindent \Huge\textbf{\Titulo}  \medskip \\
 		\ifx\Subtitulo\relax\else\noindent\textbf{\large \Subtitulo} \\ \fi%
 		\noindent \rule{\textwidth}{1 pt}
     \end{center}%
-    %{\noindent\large\Fecha \hspace*\fill \Materia} \\
     \ifx\Submateria\relax\else{\noindent \hspace*\fill \Submateria}\fi%
 
     \medskip%

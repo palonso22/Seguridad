@@ -146,7 +146,7 @@ materia{Seguridad Informática}
 
 
 \backslash
-titulo{Primera Entrega - Ejercicios Prácticos}
+titulo{Primera Entrega}
 \end_layout
 
 \begin_layout Plain Layout
@@ -191,8 +191,12 @@ En el ámbito de la seguridad informática, las amenazas pueden originarse
  tanto desde fuera de una organización (ataques externos) como desde dentro
  de ella (ataques internos).
  Aunque ambos tipos de amenazas buscan comprometer la confidencialidad,
- integridad o disponibilidad de la información, pero presentan diferencias
- significativas en cuanto a su naturaleza, motivaciones y métodos de defensa:
+ integridad o disponibilidad de la información, presentan diferencias significat
+ivas en cuanto a su naturaleza, motivaciones y métodos de defensa:
+\end_layout
+
+\begin_layout Subsection*
+Diferencia en cuanto a su naturaleza:
 \end_layout
 
 \begin_layout Itemize
@@ -202,12 +206,23 @@ Seguridad interna: Busca proteger la información del acceso indebido de
  Poseen credenciales legítimas o conocimiento interno de los sistemas por
  lo cual sus acciones pueden parece legítimas y un ataque de este tipo puede
  ser muy difícil de detectar.
- Algunos ataques típicos que comprometen la seguridad interna son: - Robo
- de información confidencial por parte de un empleado.
- - Uso indebido de accesos.
- - Eliminación accidental de datos.
+ Algunos ataques típicos que comprometen la seguridad interna son:
 \end_layout
 
+\begin_deeper
+\begin_layout Itemize
+Robo de información confidencial por parte de un empleado.
+\end_layout
+
+\begin_layout Itemize
+Uso indebido de accesos.
+\end_layout
+
+\begin_layout Itemize
+Eliminación accidental de datos.
+\end_layout
+
+\end_deeper
 \begin_layout Itemize
 Seguridad externa: Busca proteger la información del acceso indebido de
  parte de hackers, ciberdelincuentes o del acceso no autorizado de usuarios.
@@ -215,31 +230,82 @@ Seguridad externa: Busca proteger la información del acceso indebido de
  privilegiado a los sistemas de información por lo cual cualquier acceso
  por parte de estos sujetos se considera una vulnerabilidad del sistema.
  Algunos ejemplos de ataques que buscan comprometer la seguridad externa
- son: ataques de phishing, malware, DDoS, intrusiones por vulnerabilidades
- no parcheadas o cubiertas.
+ son:
 \end_layout
 
-\begin_layout Standard
-Las medidas de seguridad interna pueden ser: - Restricción de acceso mínimo:
- Cada usuario debe poder acceder solo a lo que exija su nivel de acceso.
- - Correcta capacitación y concientización para prevenir el mal uso.
- - Registros de auditoría (logs) y monitoreo de comportamiento anómalo.
- - Sistemas DLP (Data Loss Prevention) para prevenir fuga de información.
- - Separación de funciones críticas (nadie debe tener control total sin
- supervisión).
- - Políticas claras de seguridad y sanciones por mal uso.
+\begin_deeper
+\begin_layout Itemize
+Ataques de phishing, malware, DDoS.
 \end_layout
 
-\begin_layout Standard
-Mientras que las medidas de seguridad externa pueden ser: - Uso de firewalls,
- antivirus, sistemas de detección y prevención de intrusos (IDS/IPS).
- - Segmentación de redes y control de acceso desde Internet.
- - Políticas de actualización y parcheo de sistemas.
- - Autenticación multifactor (MFA) para reducir accesos no autorizados.
- - Monitoreo del tráfico externo y filtrado de correos (antiphishing, antispam).
+\begin_layout Itemize
+Intrusiones por vulnerabilidades no parcheadas o cubiertas.
 \end_layout
 
-\begin_layout Standard
+\end_deeper
+\begin_layout Subsection*
+Diferencias en cuanto a medidas de seguridad:
+\end_layout
+
+\begin_layout Subsubsection*
+Medidas de seguridad interna:
+\end_layout
+
+\begin_layout Itemize
+Restricción de acceso mínimo: Cada usuario debe poder acceder solo a lo
+ que exija su nivel de acceso.
+ 
+\end_layout
+
+\begin_layout Itemize
+Correcta capacitación y concientización para prevenir el mal uso.
+\end_layout
+
+\begin_layout Itemize
+Registros de auditoría (logs) y monitoreo de comportamiento anómalo.
+\end_layout
+
+\begin_layout Itemize
+Sistemas DLP (Data Loss Prevention) para prevenir fuga de información.
+\end_layout
+
+\begin_layout Itemize
+Separación de funciones críticas (nadie debe tener control total sin supervisión
+).
+\end_layout
+
+\begin_layout Itemize
+Políticas claras de seguridad y sanciones por mal uso.
+\end_layout
+
+\begin_layout Subsubsection*
+Medidas de seguridad externa:
+\end_layout
+
+\begin_layout Itemize
+Uso de firewalls, antivirus, sistemas de detección y prevención de intrusos
+ (IDS/IPS).
+\end_layout
+
+\begin_layout Itemize
+Segmentación de redes y control de acceso desde Internet.
+\end_layout
+
+\begin_layout Itemize
+Políticas de actualización y parcheo de sistemas.
+ 
+\end_layout
+
+\begin_layout Itemize
+Autenticación multifactor (MFA) para reducir accesos no autorizados.
+ 
+\end_layout
+
+\begin_layout Itemize
+Monitoreo del tráfico externo y filtrado de correos (antiphishing, antispam).
+\end_layout
+
+\begin_layout Subsection*
 Evolución con el progreso tecnológico:
 \end_layout
 
@@ -251,7 +317,7 @@ Sí, las diferencias han evolucionado notablemente con el tiempo: En los
  Con la conectividad masiva (Internet, nube, IoT, trabajo remoto), los límites
  entre lo interno y lo externo se volvieron difusos.
  Hoy en día, las organizaciones adoptan modelos de "confianza cero" (Zero
- Trust): nadie, ni siquiera los usuarios internos, se considera confiable
+ Trust): nadie, ni siquiera los usuarios internos, se consideran confiables
  por defecto.
  Además, la automatización, inteligencia artificial y análisis de comportamiento
  permiten detectar tanto ataques externos como internos con mayor precisión.
@@ -324,7 +390,7 @@ a) Control de acceso con Bell-LaPadula
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "style=haskell,caption={Basic access control function}"
+lstparams "style=haskell,caption={Control de acceso básico}"
 inline false
 status open
 
@@ -482,7 +548,7 @@ b) Control de acceso extendido preservando propiedad *
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "style=haskell,caption={Extended function with open files tracking}"
+lstparams "style=haskell,caption={Control de acceso extendido con chequeo de propiedad *}"
 inline false
 status open
 
