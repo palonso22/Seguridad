@@ -4,11 +4,12 @@
 \begin_header
 \save_transient_properties true
 \origin unavailable
-\textclass article
+\textclass book
 \begin_preamble
 
 \usepackage{xcolor}
 \usepackage{listings}
+\usepackage[graf, intHoriz, sinLU, showDirectores]{caratula}
 
 
 % Haskell syntax highlighting
@@ -49,15 +50,11 @@ showstringspaces=false,
 tabsize=2,
 captionpos=b
 }
-
-\title{Seguridad informática}
-\author{Pablo Alonso}
-\date{23 de Octubre 2025}
 \end_preamble
 \use_default_options false
 \maintain_unincluded_children false
-\language english
-\language_package none
+\language spanish
+\language_package default
 \inputencoding auto
 \fontencoding default
 \font_roman "default" "default"
@@ -126,6 +123,64 @@ captionpos=b
 \end_header
 
 \begin_body
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+integrante{Pablo Alonso}{}{pabloalonsoxx@gmail.com}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+materia{Seguridad Informática}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+titulo{Primera Entrega - Ejercicios Prácticos}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+director{}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+thispagestyle{empty}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+maketitle
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage cleardoublepage
+\end_inset
+
+
+\end_layout
 
 \begin_layout Section*
 Ejercicio 4
