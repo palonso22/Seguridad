@@ -32,6 +32,24 @@
                {<=}{$\leq$}{2}
 }
 
+
+\lstdefinestyle{cppstyle}{
+language=C++,
+basicstyle=\ttfamily\small,
+keywordstyle=\color{blue}\bfseries,
+commentstyle=\color{green!50!black}\itshape,
+stringstyle=\color{red},
+numbers=left,
+numberstyle=\tiny, % tamaño de los números de línea
+stepnumber=1,
+numbersep=8pt,
+frame=single,
+breaklines=true,
+showstringspaces=false,
+tabsize=2,
+captionpos=b
+}
+
 \title{Seguridad informática}
 \author{Pablo Alonso}
 \date{23 de Octubre 2025}
@@ -246,7 +264,7 @@ Ejercicio 15
 \end_layout
 
 \begin_layout Subsection*
-a) Bell-LaPadula
+a) Control de acceso con Bell-LaPadula
 \end_layout
 
 \begin_layout Standard
@@ -404,7 +422,7 @@ grant user file access = case access of
 \end_layout
 
 \begin_layout Subsection*
-b) Extended Function with State Tracking
+b) Control de acceso extendido preservando propiedad *
 \end_layout
 
 \begin_layout Standard
@@ -645,6 +663,487 @@ closeFile user file state =
 \end_inset
 
 
+\end_layout
+
+\begin_layout Section*
+Ejercicio 22
+\end_layout
+
+\begin_layout Subsection*
+Programa 1
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=cppstyle,caption={Ejemplo: main.cpp}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+magic = readL();
+\end_layout
+
+\begin_layout Plain Layout
+
+if (magic == 0xdeadbeef)
+\end_layout
+
+\begin_layout Plain Layout
+
+    writeH("hey");
+\end_layout
+
+\begin_layout Plain Layout
+
+else
+\end_layout
+
+\begin_layout Plain Layout
+
+    writeH("ho"); 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Ejecución SME:
+\end_layout
+
+\begin_layout Itemize
+El proceso inicia como Pᴸ (nivel L).
+\end_layout
+
+\begin_layout Itemize
+readL() → lee información pública, por lo tanto permanece en L.
+\end_layout
+
+\begin_layout Itemize
+writeH(...) → esta permitido, ya que un proceso L puede escribir en objetos
+ H o L.
+\end_layout
+
+\begin_layout Itemize
+No hay lectura de datos H, por lo tanto no se crea proceso H.
+\end_layout
+
+\begin_layout Itemize
+No se produce fork ya que el flujo L → H es seguro y permitido según SME.
+ 
+\end_layout
+
+\begin_layout Subsection*
+Programa 2
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=cppstyle,caption={Ejemplo: main.cpp}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+x = readH();
+\end_layout
+
+\begin_layout Plain Layout
+
+writeL("Loading...");
+\end_layout
+
+\begin_layout Plain Layout
+
+writeH(x);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Ejecución SME:
+\end_layout
+
+\begin_layout Itemize
+Proceso inicia como Pᴸ.
+\end_layout
+
+\begin_layout Itemize
+Intenta hacer readH().
+ El sistema operativo hace un fork:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Pᴸ: no puede leer x, continúa con una versión sin ese dato.
+\end_layout
+
+\begin_layout Itemize
+Pᴴ: puede leer x y se reclasifica en nivel H.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+writeL("Loading...") es ejecutado solo por Pᴸ (válido).
+\end_layout
+
+\begin_layout Itemize
+writeH(x) es ejecutado solo por Pᴴ (válido).
+\end_layout
+
+\begin_layout Itemize
+Cada proceso actúa dentro de sus permisos:
+\end_layout
+
+\begin_layout Itemize
+Pᴸ no accede a H ni escribe H→L.
+\end_layout
+
+\begin_layout Itemize
+Pᴴ solo escribe en H.
+\end_layout
+
+\begin_layout Itemize
+El flujo resulta seguro bajo SME.
+ No hay fuga H → L.
+\end_layout
+
+\begin_layout Subsection*
+Programa 3
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=cppstyle,caption={Ejemplo: main.cpp}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+x = readH();
+\end_layout
+
+\begin_layout Plain Layout
+
+writeL("Loading");
+\end_layout
+
+\begin_layout Plain Layout
+
+while (x-- > 100)
+\end_layout
+
+\begin_layout Plain Layout
+
+    writeL(".");
+\end_layout
+
+\begin_layout Plain Layout
+
+writeH(x); 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Ejecución SME:
+\end_layout
+
+\begin_layout Itemize
+Solo accede a datos de nivel L.
+\end_layout
+
+\begin_layout Itemize
+Permanece como Pᴸ todo el tiempo.
+\end_layout
+
+\begin_layout Itemize
+Solo escribe en L, sin interacción con H.
+\end_layout
+
+\begin_layout Itemize
+No hay fork.
+ Totalmente seguro.
+  Sin fugas.
+\end_layout
+
+\begin_layout Subsection*
+Programa 4
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=cppstyle,caption={Ejemplo: main.cpp}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+user = readL();
+\end_layout
+
+\begin_layout Plain Layout
+
+pass = readL();
+\end_layout
+
+\begin_layout Plain Layout
+
+if (user == "root" && pass == "1234")
+\end_layout
+
+\begin_layout Plain Layout
+
+    msg = "Bienvenido";
+\end_layout
+
+\begin_layout Plain Layout
+
+else
+\end_layout
+
+\begin_layout Plain Layout
+
+    msg = "Usuario/password incorrecto"; writeL(msg);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Ejecución SME:
+\end_layout
+
+\begin_layout Itemize
+Solo accede a datos de nivel L.
+\end_layout
+
+\begin_layout Itemize
+Permanece como Pᴸ todo el tiempo.
+\end_layout
+
+\begin_layout Itemize
+Solo escribe en L, sin interacción con H.
+\end_layout
+
+\begin_layout Itemize
+No hay fork.
+ Totalmente seguro.
+ Sin fugas.
+\end_layout
+
+\begin_layout Subsection*
+Programa 5
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=cppstyle,caption={Ejemplo: main.cpp}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+db_pass = readPassFromDBH();
+\end_layout
+
+\begin_layout Plain Layout
+
+db_user = readUserFromDBH();
+\end_layout
+
+\begin_layout Plain Layout
+
+user = readL();
+\end_layout
+
+\begin_layout Plain Layout
+
+pass = readL();
+\end_layout
+
+\begin_layout Plain Layout
+
+if (user == db_user && pass == db_pass)
+\end_layout
+
+\begin_layout Plain Layout
+
+    msg = "Bienvenido";
+\end_layout
+
+\begin_layout Plain Layout
+
+else
+\end_layout
+
+\begin_layout Plain Layout
+
+    msg = "Usuario/password incorrecto";
+\end_layout
+
+\begin_layout Plain Layout
+
+writeL(msg);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Ejecución SME:
+\end_layout
+
+\begin_layout Itemize
+Proceso inicia como Pᴸ.
+\end_layout
+
+\begin_layout Itemize
+Al ejecutar readPassFromDBH() o readUserFromDBH() se accede a información
+ H.
+ Según MSE El sistema operativo hace fork:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Pᴸ: continúa sin leer los datos H (por ejemplo, variables db_user, db_pass
+ quedan vacías o con valores neutros).
+\end_layout
+
+\begin_layout Itemize
+Pᴴ: lee los verdaderos valores de la base de datos (clasificado en H).
+\end_layout
+
+\begin_layout Itemize
+Pᴸ: como no tiene los datos H, el if se evalúa como falso → siempre msg
+ = "Usuario/password incorrecto".
+\end_layout
+
+\begin_layout Itemize
+Pᴴ: hace la comparación real, puede escribir en H, pero no puede escribir
+ en L.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Resultado visible en L: siempre el mismo mensaje (“incorrecto”).
+ Resultado interno en H: completo y verdadero.
+\end_layout
+
+\begin_layout Itemize
+El flujo resulta seguro bajo SME ya que no hay filtración de información
+ H hacia L.
+\end_layout
+
+\begin_layout Section*
+Ejercicio 23
+\end_layout
+
+\begin_layout Standard
+En el desafı́o 5 se logra descubrir el valor de h con el siguiente código:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=cppstyle"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+l = true;
+\end_layout
+
+\begin_layout Plain Layout
+
+try {
+\end_layout
+
+\begin_layout Plain Layout
+
+    if (h) {
+\end_layout
+
+\begin_layout Plain Layout
+
+        throw;
+\end_layout
+
+\begin_layout Plain Layout
+
+    }
+\end_layout
+
+\begin_layout Plain Layout
+
+    l = false;
+\end_layout
+
+\begin_layout Plain Layout
+
+} catch skip;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Qué tipo de ataque logró llevar adelante?
+\end_layout
+
+\begin_layout Standard
+Se logró llevar adelante un ataque por canal encubierto o flujo de información
+ ilegal, en el cual una variable de bajo nivel (l) obtiene indirectamente
+ información sobre una variable de alto nivel (h), violando así la confidenciali
+dad del sistema.
+\end_layout
+
+\begin_layout Subsection*
+Qué limitación tiene el sistema de reglas?
+\end_layout
+
+\begin_layout Standard
+La limitación del sistema de reglas es que no verifica el nivel de seguridad
+ del código que no se ejecuta dentro de un bloque try cuando ocurre un throw
+ de alto nivel.
+ En consecuencia, permite que partes de código de bajo nivel sean influenciadas
+ indirectamente por información de alto nivel.
+\end_layout
+
+\begin_layout Subsection*
+Qué cambio habría que hacerle para impedir el ataque?
+\end_layout
+
+\begin_layout Standard
+Para impedir el ataque, el sistema debería imponer una restricción adicional:
+ cuando se produzca un throw de alto nivel, se debe garantizar que no se
+ ejecuten posteriormente sentencias de nivel inferior.
+ Es decir, tras una excepción de alto nivel, el control debe mantenerse
+ únicamente dentro de un contexto de igual o mayor nivel de seguridad.
 \end_layout
 
 \end_body
