@@ -9,7 +9,7 @@
 
 \usepackage{xcolor}
 \usepackage{listings}
-\usepackage[graf, intHoriz, sinLU, showDirectores]{caratula}
+\usepackage[graf, intHoriz, sinLU, hideDirectores]{caratula}
 
 
 % Haskell syntax highlighting
