@@ -231,10 +231,6 @@ La tarea pide explotar una vulnerabilidad de tipo buffer-overflow sobre
  contenido del archivo.
 \end_layout
 
-\begin_layout Subsection*
-Buffer Overflow Attack - Memory Layout
-\end_layout
-
 \begin_layout Enumerate
 Compilar el programa con gcc -o stack -ggdb -static -m32 -z execstack -fno-stack
 -protector stack.c.
@@ -819,7 +815,400 @@ exploit_demo.sh
 
 \end_deeper
 \begin_layout Standard
+\begin_inset Separator plain
+\end_inset
 
+
+\end_layout
+
+\begin_layout Subsection*
+Task 4: Launching Attack without Knowing Buffer Size
+\end_layout
+
+\begin_layout Standard
+Para sobreescribir la dirección de retorno sin tener en cuenta el tamaño
+ del buffer, una estrategia es agregar varias veces la dirección del buffer
+ al final del payload
+\end_layout
+
+\begin_layout Section*
+Segundo modulo: Criptografía
+\end_layout
+
+\begin_layout Subsection*
+Ejercicio 2)
+\end_layout
+
+\begin_layout Subsubsection*
+Desencriptación
+\end_layout
+
+\begin_layout Standard
+La estrategia de tener 2 claves 
+\begin_inset Formula $k_{1},k_{2}$
+\end_inset
+
+ para encriptar un mensaje utilizando 
+\begin_inset Formula $DES$
+\end_inset
+
+ se puede describir matemáticamente de la siguiente manera
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $C_{1}=E(m,k_{1})$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $C_{2}=E(C_{1},k_{2})$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Es decir primero aplicando 
+\begin_inset Formula $DES$
+\end_inset
+
+ con la clave 
+\begin_inset Formula $k_{1}$
+\end_inset
+
+ para obtener 
+\begin_inset Formula $C_{1}$
+\end_inset
+
+, posteriormente aplicando 
+\begin_inset Formula $DES$
+\end_inset
+
+ con 
+\begin_inset Formula $k_{2}$
+\end_inset
+
+ para obtener 
+\begin_inset Formula $C_{2}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Entonces para poder recuperar m, se necesita realizar el proceso inverso,
+ es decir aplicar primero la desencriptación utilizando 
+\begin_inset Formula $k_{2}$
+\end_inset
+
+ y al resultado obtenido aplicar la desencriptación con 
+\begin_inset Formula $k_{1}$
+\end_inset
+
+ :
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $C_{1}=D(C_{2},k_{2})$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $m=E(C_{1},k_{1})$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Vulnerabilidad
+\end_layout
+
+\begin_layout Standard
+Suponiendo que se tiene un par 
+\begin_inset Formula $(m,C)$
+\end_inset
+
+, donde C es el resultado de haber aplicado doble DES a m, se puede utilizar
+ fuerza bruta para encontrar 
+\begin_inset Formula $(k1,k2)$
+\end_inset
+
+ de la siguiente manera:
+\end_layout
+
+\begin_layout Itemize
+Iterando sobre todas las claves posibles 
+\begin_inset Formula $k_{1}$
+\end_inset
+
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily\small},frame=single"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+for k1 in [0 ..
+ 2^56]:
+\end_layout
+
+\begin_layout Plain Layout
+
+    X = DES(k1, M)
+\end_layout
+
+\begin_layout Plain Layout
+
+    store (X, k1) in table
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Para cada entrada de la tabla se tiene 120 bits (64+56), el tamaño de la
+ tabla donde se almacenan todos los pares 
+\begin_inset Formula $(X,k_{1})$
+\end_inset
+
+ es aproximadamente 150 TB.
+\end_layout
+
+\begin_layout Itemize
+Iterando sobre todas las claves posibles 
+\begin_inset Formula $k_{2}$
+\end_inset
+
+:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily\small},frame=single"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+for k2 in [0 ..
+ 2^56]:
+\end_layout
+
+\begin_layout Plain Layout
+
+    Y = DES^(-1)(k1, M)
+\end_layout
+
+\begin_layout Plain Layout
+
+    if Y is in the table:
+\end_layout
+
+\begin_layout Plain Layout
+
+		return (k1,k2)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Se necesitan almacenar para la tabla 150 TB (algo muy factible hoy en día).
+\end_layout
+
+\begin_layout Itemize
+Se tienen 
+\begin_inset Formula $2^{56}+2^{26}=2^{57}$
+\end_inset
+
+ operaciones (el doble de las necesarias para romper 
+\begin_inset Formula $DES$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Itemize
+Doble 
+\begin_inset Formula $DES$
+\end_inset
+
+ no agrega significativamente más seguridad.
+\end_layout
+
+\begin_layout Subsection*
+Ejercicio 3)
+\end_layout
+
+\begin_layout Subsubsection*
+Definición
+\end_layout
+
+\begin_layout Standard
+3DES (Triple DES) encripta bloques de 64-bits utilizando 3 veces DES.
+\end_layout
+
+\begin_layout Standard
+La versión más utilizada es EDE (Encryp, Decrypt, Encrypt) mode:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+C=DES(k_{1},DES^{-1}(k_{2},DES(k_{1},M)))\label{eq:3des-ede}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Existe 2 variantes:
+\end_layout
+
+\begin_layout Standard
+2 claves 
+\begin_inset Formula $k_{1},k_{2}\rightarrow$
+\end_inset
+
+112 bits de seguridad pero más rápido
+\end_layout
+
+\begin_layout Standard
+3 claves 
+\begin_inset Formula $k_{1},k_{2},k_{3}\rightarrow$
+\end_inset
+
+ 168 bits de seguridad pero más lento
+\end_layout
+
+\begin_layout Standard
+EDE mode permite retrocompatibilidad puesto que 3DES funciona como DES cuando
+ se usa la variantes de 2 claves y 
+\begin_inset Formula $k_{1}=k_{2}$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+C=DES(k_{1},DES^{-1}(k_{1},DES(k_{1},M)))=DES(k_{1},M)\label{eq:3des-compatibility}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Mejor que 2DES
+\end_layout
+
+\begin_layout Standard
+La vulnerabilidad 
+\begin_inset Formula $meet-in-the-middle$
+\end_inset
+
+ no se encuentra en este método, puesto que se deben encontrar 
+\begin_inset Formula $k_{1},k_{2}$
+\end_inset
+
+ que resuelvan las siguientes ecuaciones:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+X=E(k_{1},M)\label{eq:mitm-x}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+Y=D(k_{2},X)\label{eq:mitm-y}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+C=E(k_{1},Y)\label{eq:mitm-c}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Matemáticamente no es posible encontrar una solución en el medio puesto
+ que 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:mitm-x"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ y 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:mitm-c"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ son independientes.
+ La unica solución para romper 3DES es encontrar 
+\begin_inset Formula $k1,k2$
+\end_inset
+
+ por fuerza bruta lo cual tiene un costo de 
+\begin_inset Formula $2^{56}×2^{56}=2^{112}$
+\end_inset
+
+ operaciones.
+\end_layout
+
+\begin_layout Subsection*
+Ejercicio 4)
+\end_layout
+
+\begin_layout Subsection*
+Ejercicio 6)
 \end_layout
 
 \end_body
