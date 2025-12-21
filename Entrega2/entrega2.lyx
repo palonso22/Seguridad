@@ -1207,8 +1207,468 @@ noprefix "false"
 Ejercicio 4)
 \end_layout
 
+\begin_layout Subsubsection*
+Por qué es difícil encriptar archivos largos con RSA?
+\end_layout
+
+\begin_layout Standard
+RSA está basado en matemática modular:
+\end_layout
+
+\begin_layout Enumerate
+El mensaje se convierte en un número:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+0 ≤ M < n
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Encriptación: C = 
+\begin_inset Formula $M^{e}\mod n$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Desencriptación: M = 
+\begin_inset Formula $C^{d}\mod n$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+La exponenciación en RSA es cara puesto que se requiere la multiplicación
+ de grandes enteros.
+ 
+\end_layout
+
+\begin_layout Standard
+RSA funciona con enteros de módulo n.
+ Si la clave RSA es de 2048 bits, n es de 256 bytes.
+\end_layout
+
+\begin_layout Standard
+Maximum message size < 256 bytes, además el padding consume espacio, entonces
+ el límite real es entre 190 y 220 bytes mientras que 1MB de información
+ tiene: 1,048,576 bytes.
+ Por conclusión, no se puede representar un archivo de 1 MB de tamaño como
+ un solo mensaje RSA.
+\end_layout
+
+\begin_layout Subsubsection*
+La solución es usar encriptación mixta:
+\end_layout
+
+\begin_layout Enumerate
+Encriptar el archivo con un 
+\begin_inset Formula $cipher$
+\end_inset
+
+ simétrico y veloz (AES).
+\end_layout
+
+\begin_layout Enumerate
+Encriptar la llave AES utilizando RSA.
+\end_layout
+
+\begin_layout Subsubsection*
+Solución paso por paso
+\end_layout
+
+\begin_layout Enumerate
+Generar un par de llaves RSA:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Public key → used for encryption
+\end_layout
+
+\begin_layout Enumerate
+Private key → used for decryption'
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Generar una llave AES random (AES-256 key = 32 random bytes).
+ Esta llave es de un solo uso.
+\end_layout
+
+\begin_layout Enumerate
+Encriptar el archivo utilizando AES.
+\end_layout
+
+\begin_layout Enumerate
+Encriptar la llave AES utilizando RSA.
+\end_layout
+
+\begin_layout Enumerate
+Almacenar o transmitir.
+\end_layout
+
+\begin_layout Enumerate
+Proceso de desencriptación:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Usar la clave privada RSA para desencriptar la clave AES.
+\end_layout
+
+\begin_layout Enumerate
+Usar la clave AES para desencriptar el archivo.
+\end_layout
+
+\begin_layout Enumerate
+Verificar la integridad.
+\end_layout
+
+\end_deeper
 \begin_layout Subsection*
-Ejercicio 6)
+Ejercicio 6) 
+\end_layout
+
+\begin_layout Standard
+ECB y CBC son modos de operación que describern como un cifrados de bloques
+ (AES, DES, etc.) encriptan datos más grandes que un bloque.
+\end_layout
+
+\begin_layout Subsubsection*
+ECB (electronic codebook)
+\end_layout
+
+\begin_layout Standard
+Cada bloque es encriptado independientemente
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+C_{i}=E_{k}(P_{i})\label{eq:ecb}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Su desventaja radica en que bloques de texto plano identico produce bloques
+ cifrados identicos.
+\end_layout
+
+\begin_layout Standard
+Esta falta de aleatoriedad permite a los atacantes aprender patrones, haciendolo
+ vulnerable al bit-flipping donde el atacante puede producir cambios significati
+vos en los datos encriptados que son reflajados en la desencriptación permitiend
+o al atacante obtener información, algunos ejemplos son cookies de páginas
+ web ganando acceso de administrador, valores de pago alterados en requests
+ alteradas, .
+\end_layout
+
+\begin_layout Subsubsection*
+CBC (Cipher Block Chaining)
+\end_layout
+
+\begin_layout Standard
+Arregla la falla más grande de ECB.
+\end_layout
+
+\begin_layout Standard
+Cada bloque de texto plano se le aplica un XOR con el bloque cifrado anteriormen
+te.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+Ci​=E_{k}(P_{I}​⊕C_{i−1}​)\label{eq:cbc-1}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Desventajas de CBC
+\end_layout
+
+\begin_layout Itemize
+No posee autenticación.
+\end_layout
+
+\begin_layout Itemize
+El atacante puede modificar bits (flip bits).
+\end_layout
+
+\begin_layout Itemize
+Errores de padding crean ataques catastróficos.
+\end_layout
+
+\begin_layout Subsubsection*
+Comparación entre ECB vs CBC
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="8" columns="3">
+<features tabularvalignment="middle">
+<column alignment="left" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Feature
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ECB
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+CBC
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ocultamiento de patrones
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Requiere IV
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Aleatoriedad
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Integridad
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Encriptación paralela
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Desencriptación paralela
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Si
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Seguridad actual
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Solo usado correctamente
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Para encriptar una imagen en formato bitmap
+\end_layout
+
+\begin_layout Standard
+Entre ECB y CBC la opción más segura es CBC por las razones ya mencionas.
+ Más aún, lo que realmente se recomienda es usar un método más moderno y
+ seguro (AES-GCM) los cuales cubren las ventajas de ECB y CBC.
 \end_layout
 
 \end_body
