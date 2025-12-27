@@ -979,7 +979,7 @@ x80" )
 
 \begin_layout Plain Layout
 
-# Usage: ./create_shellcode3.py <return_address_hex> [padding_bytes]
+# Usage: ./exploit.py <return_address_hex> [padding_bytes]
 \end_layout
 
 \begin_layout Plain Layout
@@ -994,7 +994,7 @@ if len(sys.argv) < 2:
 
 \begin_layout Plain Layout
 
-    print("Example: ./create_shellcode3.py 0xffffc8a0 40")
+    print("Example: ./exploit.py 0xffffc8a0 40")
 \end_layout
 
 \begin_layout Plain Layout
@@ -1143,7 +1143,7 @@ Segmentation fault
 
 \begin_layout Plain Layout
 
-[12/26/25]seed@VM:~/.../code$ ./create_shellcode3.py 0xFFFFCA6c
+[12/26/25]seed@VM:~/.../code$ ./exploit.py 0xFFFFCA6c
 \end_layout
 
 \begin_layout Plain Layout
@@ -1225,7 +1225,7 @@ Segmentation fault
 
 \begin_layout Plain Layout
 
-[12/26/25]seed@VM:~/.../code$ ./create_shellcode3.py 0xffffca30
+[12/26/25]seed@VM:~/.../code$ ./exploit.py 0xffffca30
 \end_layout
 
 \begin_layout Plain Layout
@@ -1309,7 +1309,7 @@ Segmentation fault
 
 \begin_layout Plain Layout
 
-[12/26/25]seed@VM:~/.../code$ ./create_shellcode3.py 0xffffca08
+[12/26/25]seed@VM:~/.../code$ ./exploit.py 0xffffca08
 \end_layout
 
 \begin_layout Plain Layout
@@ -1396,7 +1396,7 @@ Illegal instruction
 
 \begin_layout Plain Layout
 
-[12/26/25]seed@VM:~/.../code$ ./create_shellcode3.py 0xFFFFCAC8 2
+[12/26/25]seed@VM:~/.../code$ ./exploit.py 0xFFFFCAC8 2
 \end_layout
 
 \begin_layout Plain Layout
@@ -1826,19 +1826,13 @@ Por qué es difícil encriptar archivos largos con RSA?
 \end_layout
 
 \begin_layout Standard
-RSA está basado en matemática modular:
+RSA está basado en matemática modular, dado n el producto de 2 primos grandes:
 \end_layout
 
 \begin_layout Enumerate
-El mensaje se convierte en un número:
+El mensaje se convierte en un número M tal que 0 ≤ M < n.
 \end_layout
 
-\begin_deeper
-\begin_layout Enumerate
-0 ≤ M < n
-\end_layout
-
-\end_deeper
 \begin_layout Enumerate
 Encriptación: C = 
 \begin_inset Formula $M^{e}\mod n$
@@ -1856,31 +1850,52 @@ Desencriptación: M =
 \end_layout
 
 \begin_layout Standard
-La exponenciación en RSA es cara puesto que se requiere la multiplicación
- de grandes enteros.
- 
+Observar que RSA no opera sobre flujos de datos grandes, sino sobre enteros
+ menores que el módulo n.
+ Si se utiliza una clave RSA de 2048 bits, el tamaño de n es de 2048 bits
+ (256 bytes).
+ Esto implica que el mensaje a cifrar debe ser estrictamente menor a 256
+ bytes.
+ Además, en la práctica no se puede usar todo ese espacio porque RSA requiere
+ padding criptográfico seguro (como OAEP) para evitar ataques matemáticos.
+ Este padding ocupa parte del espacio disponible, por lo que el tamaño real
+ suele ser entre 190 y 220 bytes.
 \end_layout
 
 \begin_layout Standard
-RSA funciona con enteros de módulo n.
- Si la clave RSA es de 2048 bits, n es de 256 bytes.
-\end_layout
-
-\begin_layout Standard
-Maximum message size < 256 bytes, además el padding consume espacio, entonces
- el límite real es entre 190 y 220 bytes mientras que 1MB de información
- tiene: 1,048,576 bytes.
- Por conclusión, no se puede representar un archivo de 1 MB de tamaño como
- un solo mensaje RSA.
+Dado que un archivo de 1MB de información tiene: 1,048,576 bytes, por conclusión
+, no se puede representar un archivo de 1 MB de tamaño como un mensaje RSA.
 \end_layout
 
 \begin_layout Subsubsection*
-La solución es usar encriptación mixta:
+Costo computacional
+\end_layout
+
+\begin_layout Standard
+La operación dominante en RSA es la exponenciación modular, que implica
+ muchas multiplicaciones de enteros grandes.
+ Comparado con algoritmos simétricos como AES:
+\end_layout
+
+\begin_layout Itemize
+RSA es varios órdenes de magnitud más lento.
+\end_layout
+
+\begin_layout Itemize
+AES está optimizado tanto en software como en hardware (AES-NI).
+\end_layout
+
+\begin_layout Itemize
+Por estas razones, RSA no se usa para cifrar archivos grandes directamente.
+\end_layout
+
+\begin_layout Subsubsection*
+La solución es usar encriptación híbrida:
 \end_layout
 
 \begin_layout Enumerate
 Encriptar el archivo con un 
-\begin_inset Formula $cipher$
+\begin_inset Formula $\textit{cipher}$
 \end_inset
 
  simétrico y veloz (AES).
@@ -1900,21 +1915,24 @@ Generar un par de llaves RSA:
 
 \begin_deeper
 \begin_layout Enumerate
-Public key → used for encryption
+Clave pública → usada para encriptar
 \end_layout
 
 \begin_layout Enumerate
-Private key → used for decryption'
+Clave privada → usada para desencriptar
 \end_layout
 
 \end_deeper
 \begin_layout Enumerate
-Generar una llave AES random (AES-256 key = 32 random bytes).
- Esta llave es de un solo uso.
+Generar una llave AES aleatoria, por ejemplo AES-256 que requiere 32 bytes
+ aleatorios.
+ Esta llave es de un solo uso, generada por un generador criptográfico seguro.
 \end_layout
 
 \begin_layout Enumerate
 Encriptar el archivo utilizando AES.
+ Se utiliza un modo seguro como AES-GCM o AES-CBC + HMAC.
+ AES puede utilizar archivos de cualquier tamaño.
 \end_layout
 
 \begin_layout Enumerate
@@ -1922,7 +1940,8 @@ Encriptar la llave AES utilizando RSA.
 \end_layout
 
 \begin_layout Enumerate
-Almacenar o transmitir.
+Almacenar o transmitir el archivo cifrado con AES, la clave AES cifrada
+ con RSA.
 \end_layout
 
 \begin_layout Enumerate
@@ -1947,9 +1966,32 @@ Verificar la integridad.
 Ejercicio 6) 
 \end_layout
 
+\begin_layout Subsubsection*
+Modos de operación de un cifrador de bloques
+\end_layout
+
 \begin_layout Standard
-ECB y CBC son modos de operación que describern como un cifrados de bloques
- (AES, DES, etc.) encriptan datos más grandes que un bloque.
+ECB y CBC son modos de operación que describen como un cifrador de bloques
+ (AES, DES, etc.) puede utilizarse para cifrar datos cuyo tamaño es mayor
+ que el de un solo bloque.
+\end_layout
+
+\begin_layout Standard
+Un cifrador de bloques:
+\end_layout
+
+\begin_layout Itemize
+Opera sobre bloques de tamaño fijo (por ejemplo, AES usa bloques de 128
+ bits).
+\end_layout
+
+\begin_layout Itemize
+Por sí solo no sabe cómo cifrar mensajes largos.
+\end_layout
+
+\begin_layout Itemize
+Los modos de operación indican cómo encadenar bloques y cómo introducir
+ (o no) aleatoriedad.
 \end_layout
 
 \begin_layout Subsubsection*
@@ -1957,7 +1999,8 @@ ECB (electronic codebook)
 \end_layout
 
 \begin_layout Standard
-Cada bloque es encriptado independientemente
+En modo ECB, cada bloque de texto plano se cifra de forma completamente
+ independiente usando la misma clave:
 \end_layout
 
 \begin_layout Standard
@@ -1972,17 +2015,114 @@ C_{i}=E_{k}(P_{i})\label{eq:ecb}
 \end_layout
 
 \begin_layout Standard
-Su desventaja radica en que bloques de texto plano identico produce bloques
- cifrados identicos.
+Donde:
 \end_layout
 
 \begin_layout Standard
-Esta falta de aleatoriedad permite a los atacantes aprender patrones, haciendolo
- vulnerable al bit-flipping donde el atacante puede producir cambios significati
-vos en los datos encriptados que son reflajados en la desencriptación permitiend
-o al atacante obtener información, algunos ejemplos son cookies de páginas
- web ganando acceso de administrador, valores de pago alterados en requests
- alteradas, .
+\begin_inset Formula $P_{i}$
+\end_inset
+
+ es el i-ésimo bloque de texto plano.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $C_{i}$
+\end_inset
+
+ es el bloque cifrado correspondiente.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $E_{k}$
+\end_inset
+
+ es el cifrador de bloques con clave k.
+\end_layout
+
+\begin_layout Standard
+No se utiliza IV (vector de inicialización) ni existe dependencia entre
+ bloques.
+\end_layout
+
+\begin_layout Subsubsection*
+Desventaja
+\end_layout
+
+\begin_layout Standard
+Su desventaja radica en que bloques de texto plano identico produce bloques
+ cifrados identicos.
+ 
+\end_layout
+
+\begin_layout Standard
+Sus consecuencias directas son:
+\end_layout
+
+\begin_layout Itemize
+No hay aleatoriedad: el cifrado es determinístico.
+\end_layout
+
+\begin_layout Itemize
+Se filtran patrones estructurales del mensaje.
+\end_layout
+
+\begin_layout Itemize
+El atacante puede identificar:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Regiones repetidas.
+\end_layout
+
+\begin_layout Standard
+Campos con valores constantes.
+\end_layout
+
+\begin_layout Standard
+Estructura interna del mensaje.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+Un ejemplo clásico es el cifrado de imágenes bitmap:
+\end_layout
+
+\begin_layout Standard
+Aunque la imagen esté cifrada, la silueta sigue siendo visible porque los
+ píxeles repetidos producen bloques cifrados iguales.
+\end_layout
+
+\begin_layout Standard
+En la práctica sus vulnerabilidades son:
+\end_layout
+
+\begin_layout Itemize
+Análisis de patrones: el atacante aprende información sin conocer la clave.
+\end_layout
+
+\begin_layout Itemize
+Reordenamiento de bloques: como no hay encadenamiento, un atacante puede
+ copiar, pegar o reordenar bloques cifrados sin ser detectado.
+\end_layout
+
+\begin_layout Itemize
+Malleability (maleabilidad): el atacante puede modificar el ciphertext y
+ provocar cambios predecibles en el plaintext descifrado.
+\end_layout
+
+\begin_layout Standard
+Aunque ECB no es el modo típico de bit-flipping, su maleabilidad permite
+ ataques graves en escenarios reales, por ejemplo:
+\end_layout
+
+\begin_layout Itemize
+Manipulación de cookies de sesión.
+\end_layout
+
+\begin_layout Itemize
+Modificación de valores en requests (roles de usuario, montos de pago, flags
+ de permisos).
 \end_layout
 
 \begin_layout Subsubsection*
@@ -1990,18 +2130,23 @@ CBC (Cipher Block Chaining)
 \end_layout
 
 \begin_layout Standard
+CBC fue diseñado para corregir la mayor debilidad de ECB: la falta de aleatoried
+ad y encadenamiento.
+\end_layout
+
+\begin_layout Standard
 Arregla la falla más grande de ECB.
 \end_layout
 
 \begin_layout Standard
-Cada bloque de texto plano se le aplica un XOR con el bloque cifrado anteriormen
-te.
+Antes de cifrar cada bloque de texto plano, se realiza un XOR con el bloque
+ cifrado anterior:
 \end_layout
 
 \begin_layout Standard
 \begin_inset Formula 
 \begin{equation}
-Ci​=E_{k}(P_{I}​⊕C_{i−1}​)\label{eq:cbc-1}
+C_{i}​=E_{k}(P_{i}​⊕C_{i−1}​)\label{eq:cbc-1}
 \end{equation}
 
 \end_inset
@@ -2009,22 +2154,103 @@ Ci​=E_{k}(P_{I}​⊕C_{i−1}​)\label{eq:cbc-1}
 
 \end_layout
 
+\begin_layout Standard
+Para el primer bloque se utiliza un IV (Initialization Vector):
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+C_{0}​=E_{k}(P_{0}​⊕IV​)\label{eq:cbc-1-1}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Propiedades importantes del IV:
+\end_layout
+
+\begin_layout Itemize
+Debe ser aleatorio o impredecible.
+\end_layout
+
+\begin_layout Itemize
+No necesita ser secreto.
+\end_layout
+
+\begin_layout Itemize
+Garantiza que el mismo mensaje cifrado dos veces produzca ciphertext distinto.
+\end_layout
+
 \begin_layout Subsubsection*
 Desventajas de CBC
 \end_layout
 
 \begin_layout Itemize
-No posee autenticación.
+No posee autenticación:CBC solo garantiza confidencialidad, no integridad
+ ni autenticidad.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+El receptor no puede saber si el ciphertext fue modificado.
 \end_layout
 
 \begin_layout Itemize
-El atacante puede modificar bits (flip bits).
+Esto abre la puerta a ataques activos.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Bit-flipping attacks.
+ Si un atacante modifica bits en 
+\begin_inset Formula $C_{i}$
+\end_inset
+
+, el bloque 
+\begin_inset Formula $P_{i+1}$
+\end_inset
+
+ se verá afectado despues del cifrado.
+ Esto permite ataques como:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Cambiar valores booleanos (isAdmin = 0 → 1).
 \end_layout
 
 \begin_layout Itemize
-Errores de padding crean ataques catastróficos.
+Alterar montos de pago.
 \end_layout
 
+\begin_layout Itemize
+Modificar campos estructurados en mensajes cifrados.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Padding Oracle Attacks.
+ CBC requiere padding (por ejemplo, PKCS#7) cuando el mensaje no es múltiplo
+ del tamaño de bloque.
+ Si el sistema revela si el padding es correcto o incorrecto a través de
+ errores, tiempos o mensajes, entonces un atacante puede:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Descifrar el mensaje byte por byte sin conocer la clave.
+\end_layout
+
+\begin_layout Itemize
+Estos ataques han sido devastadores en protocolos reales (TLS, XML Encryption,
+ etc.).
+\end_layout
+
+\end_deeper
 \begin_layout Subsubsection*
 Comparación entre ECB vs CBC
 \end_layout
@@ -2215,7 +2441,7 @@ No
 \begin_inset Text
 
 \begin_layout Plain Layout
-Desencriptación paralela
+Autenticación
 \end_layout
 
 \end_inset
@@ -2244,7 +2470,7 @@ Si
 \begin_inset Text
 
 \begin_layout Plain Layout
-Seguridad actual
+Uso recomendado
 \end_layout
 
 \end_inset
@@ -2262,7 +2488,7 @@ No
 \begin_inset Text
 
 \begin_layout Plain Layout
-Solo usado correctamente
+Solo con MAC
 \end_layout
 
 \end_inset
@@ -2280,9 +2506,62 @@ Para encriptar una imagen en formato bitmap
 \end_layout
 
 \begin_layout Standard
-Entre ECB y CBC la opción más segura es CBC por las razones ya mencionas.
+Entre ECB y CBC, CBC es claramente la opción más segura, pero no es la mejor
+ opción moderna.
  Más aún, lo que realmente se recomienda es usar un método más moderno y
  seguro (AES-GCM) los cuales cubren las ventajas de ECB y CBC.
+\end_layout
+
+\begin_layout Standard
+Hoy en día se recomienda utilizar modos de cifrado autenticado (AEAD) como:
+\end_layout
+
+\begin_layout Itemize
+AES-GCM
+\end_layout
+
+\begin_layout Itemize
+AES-CCM
+\end_layout
+
+\begin_layout Itemize
+ChaCha20-Poly1305
+\end_layout
+
+\begin_layout Standard
+Estos modos:
+\end_layout
+
+\begin_layout Itemize
+Proveen confidencialidad + integridad + autenticidad.
+\end_layout
+
+\begin_layout Itemize
+Eliminan ataques de bit-flipping.
+\end_layout
+
+\begin_layout Itemize
+No son vulnerables a padding oracle attacks.
+\end_layout
+
+\begin_layout Itemize
+Son más seguros y eficientes en implementaciones modernas.
+\end_layout
+
+\begin_layout Standard
+En conclusión:
+\end_layout
+
+\begin_layout Itemize
+ECB es inseguro y debe evitarse completamente.
+\end_layout
+
+\begin_layout Itemize
+CBC mejora ECB, pero no autentica y es vulnerable a ataques activos.
+\end_layout
+
+\begin_layout Itemize
+Para sistemas reales, AES-GCM u otros AEAD son la elección correcta.
 \end_layout
 
 \end_body
