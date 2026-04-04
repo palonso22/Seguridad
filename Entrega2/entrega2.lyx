@@ -660,7 +660,12 @@ x80" )
 
 \begin_layout Plain Layout
 
-# Empirically: 110 bytes before return address works # 110 - 25 = 85
+# Empirically: 110 bytes before return address works
+\end_layout
+
+\begin_layout Plain Layout
+
+# 110 - 25 = 85
 \end_layout
 
 \begin_layout Plain Layout
